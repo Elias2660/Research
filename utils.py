@@ -15,7 +15,8 @@ SHEET_ID = os.getenv("SHEET_ID")
 def get_sheet_data(sheet_name: str, api = API_KEY):
     ...
     
-def getData(api = API_KEY, sheet_id = SHEET_ID):
+    
+def get_data(api = API_KEY, sheet_id = SHEET_ID):
     """
     Gets the data and returns three pandas dataframes with the frame count, logOn, and logPos
     dataframes

@@ -1,8 +1,8 @@
 
 # %%
 import pandas as pd
-from utils import getData
-frame_count, log_no, log_pos = getData()
+from utils import get_data
+frame_count, log_no, log_pos = get_data()
 
 # set Frame count column to be int
 frame_count['Frame count'] = frame_count['Frame count'].astype(int)
