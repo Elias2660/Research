@@ -23,7 +23,7 @@ state_changes_df = state_changes_df.sort_values(by='time')
 
 # %%
 # set the state of the frame_count
-merge_df = pd.merge_asof(frame_count, state_changes_df, on='time', direction='forward')
+merge_df = pd.merge_asof(frame_count, state_changes_df, on='time', direction='backward')
 merge_df = merge_df.sort_values(by='time')
 # set merge_df index to time column
 merge_df = merge_df.set_index('time')
@@ -35,8 +35,8 @@ merge_df2 = merge_df2.sort_index().reset_index()
 merge_df2
 
 # %%
-# loop through merge_df row by row with row_number
 
+# loop through merge_df row by row with row_number
 for row_number in range(merge_df2.shape[0]):
     # if the Filename is null
     if pd.isnull(merge_df2.iloc[row_number]['Filename']):
@@ -58,7 +58,6 @@ for row_number in range(merge_df2.shape[0]):
 merge_df2['Frame count'] = merge_df2['Frame count'].astype(int)
 merge_df2['start_frame'] = merge_df2['start_frame'].astype(int)
 merge_df2['end_frame'] = merge_df2['end_frame'].astype(int)
-        
 
 merge_df2
 # %%
