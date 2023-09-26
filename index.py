@@ -103,7 +103,7 @@ final = pd.DataFrame(columns = ["file", "class", "begin frame", "end_frame"])
 
 
 
-def find_last_frame():
+def find_last_frame(frame_count, event_number, fc_index, final):
     """
     find the begin_frame
     """
@@ -113,7 +113,7 @@ def find_last_frame():
         return 0
     else:
         #else, start with the last frame
-        return final.iloc[event_number-1]["end_frame"]
+        return final.iloc[event_number-1]["end_frame"] + 1
 
 
 def find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index) :
@@ -137,32 +137,36 @@ def update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_i
         #frame count event
         fc_index+=1
         print("change_video")
-    elif (log_no.iloc[log_no_index]["time"] < log_pos.iloc[log_pos_index]["time"]):
+    if (log_no.iloc[log_no_index]["time"] < log_pos.iloc[log_pos_index]["time"]):
         #log_no event
         log_no_index+=1
         print("logNo")
-    else:
+    if (log_no.iloc[log_no_index]["time"] < log_pos.iloc[log_pos_index]["time"]):
         #log_pos event
         log_pos_index+=1
         print("logPos")
+    return fc_index, log_no_index, log_pos_index
          
-def return_state():
+def return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index):
     """
     given the indicies, determine the state
     """
     current_file_state = frame_count.iloc[fc_index]["Filename"]
     class_state = "logPos" if current_class else "logNo"
-    begin_frame = find_last_frame()
+    begin_frame = find_last_frame(frame_count, event_number, fc_index, final)
     end_frame = find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
     return np.array([current_file_state, class_state, begin_frame, end_frame])
 
 
-
 while (fc_index < frame_count.shape[0]):
     #while not all the frame counts have been processed, keep going
-    current_state = return_state()
-    update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
-    
+    current_state = return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
+    # add curent_state to final as a new row
+    final.loc[event_number] = current_state
+    event_number+=1
+    print(current_state)
+    fc_index, log_no_index, log_pos_index = update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
+        
 
 
 
