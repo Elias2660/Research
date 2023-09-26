@@ -47,7 +47,7 @@ def get_necessary_time(row):
     date, time = matters.split(" ")
     years, months, days = date.split("-")
     hours, minutes, seconds = time.split(":")
-    return round(float(str(years) + str(months) + str(days) + str(hours) + str(minutes) + str(seconds)),0)
+    return round(float(str(years) + str(months) + str(days) + str(hours) + str(minutes) + str(seconds)),1)
 frame_count_times = frame_count.Filename
 
 
@@ -94,88 +94,79 @@ if (min(log_no.iloc[0]["time"], log_pos.iloc[0]["time"]) != frame_count.iloc[0][
 """
 ALGORITHM
 
-So we're going to have a sort of "set state" function.
-We're going to have a current event, and then forcast
-to future events, causing the next entry to the dataframe
-
-Events are either 
 """ 
+
+#%%
 final = pd.DataFrame(columns = ["file", "class", "begin frame", "end_frame"])
 
 
+def merge_dataframes(frame_count, log_no, log_pos):
+    """
+    merge the dataframes into one and sort
+    """
+    frame_count["class"] = frame_count["Filename"]
+    log_no["class"] = False;
+    log_pos["class"] = True;
+    merged = pd.DataFrame(columns = ["time", "class"])
+    merged = pd.concat([merged, frame_count[["time", "class"]]], ignore_index = True)
+    merged = pd.concat([merged, log_no[["time", "class"]]], ignore_index = True)
+    merged = pd.concat([merged, log_pos[["time", "class"]]], ignore_index = True)
+
+    merged = merged.sort_values(by=["time"]).reset_index(drop=True)
+
+    return merged
+
+merged_dataframe = merge_dataframes(frame_count, log_no, log_pos)
+    
+
+#%%
+def get_second_difference(time1, time2):
+    """
+    Given time, which is given as a float with the values 
+    of YYYYMMDDHHMMSS.S, returns the difference in seconds
+    """
+    year_diff = int(time1 // 10000000000) - int(time2 // 10000000000)
+    month_diff = int(time1 // 100000000)%100 - int(time2 // 100000000)%100
+    day_diff = int(time1 // 1000000)%100 - int(time2 // 1000000)%100
+    hour_diff = int(time1 // 10000)%100 - int(time2 // 10000)%100
+    minute_diff = int(time1 // 100)%100 - int(time2 // 100)%100
+    second_diff = int(time1 )% 100 - int(time2 ) %100
+    return abs(year_diff * 31536000 + month_diff * 2592000 + day_diff * 86400 + hour_diff * 3600 + minute_diff * 60 + second_diff)
 
 
-def find_begin_frame(frame_count, event_number, fc_index, final):
-    """
-    find the begin_frame
-    """
-    #if it's the beginning of this event, start with 0, else start with the end of the last frame
-    if (final.shape[0] == 0 or final.iloc[event_number-1]["file"] != frame_count.iloc[fc_index]["Filename"]):
-        #if this the first event or the last event was in a different file, start with 0
-        return 0
-    else:
-        #else, start with the last frame
-        return float(final.iloc[event_number-1]["end_frame"]) + 1
+#%%
 
-
-def find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index) :
+def get_last_class(merged_dataframe, index):
     """
-    given the current event, time and indicies of the current log_no and log_pos,
-    determine the next event
+    Given the merged dataframe and the current index, returns the last class with a true or false value
     """
-    #if the next event is going to be change_video event, just return the frame count
-    #else, make it the frame count of the next event minus one
-    if (frame_count.iloc[fc_index]["time"] < min(log_no.iloc[log_no_index]["time"], log_pos.iloc[log_pos_index]["time"])):
-        return frame_count.iloc[fc_index]["Frame count"]
-    else:
-        return float((min(log_no.iloc[log_no_index]["time"], log_pos.iloc[log_pos_index]["time"]) - frame_count.iloc[fc_index]["time"])*24)
-
-
-def update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index):
-    """
-    determine the type of event, and update the index values based in that
-    """
-    if (frame_count.iloc[fc_index]["time"] < min(log_no.iloc[log_no_index]["time"], log_pos.iloc[log_pos_index]["time"])):
-        #frame count event
-        fc_index+=1
-        print("change_video")
-    if (log_no.iloc[log_no_index]["time"] < log_pos.iloc[log_pos_index]["time"]):
-        #log_no event
-        log_no_index+=1
-        print("logNo")
-    if (log_no.iloc[log_no_index]["time"] > log_pos.iloc[log_pos_index]["time"]):
-        #log_pos event
-        log_pos_index+=1
-        print("logPos")
-    print(fc_index, log_no_index, log_pos_index)
-    return fc_index, log_no_index, log_pos_index
-         
-def return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index):
-    """
-    given the indicies, determine the state
-    """
-    current_file_state = frame_count.iloc[fc_index]["Filename"]
-    class_state = "logPos" if current_class else "logNo"
-    begin_frame = find_begin_frame(frame_count, event_number, fc_index, final)
-    end_frame = find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
-    return np.array([current_file_state, class_state, float(begin_frame), float(end_frame)])
-
-
-while (fc_index < frame_count.shape[0]):
-    #while not all the frame counts have been processed, keep going
-    current_state = return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
-    # add curent_state to final as a new row
-    final.loc[event_number] = current_state
-    event_number+=1
-    print(current_state)
-    fc_index, log_no_index, log_pos_index = update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
+    if (type(merged_dataframe.iloc[index]["class"])  == bool):
+        return merged_dataframe.iloc[index]["class"]
+    if index==0:
+        return True if log_no["time"][0] < log_pos["time"][0] else False
+    return get_last_class(merged_dataframe, index - 1)
+        
         
 
+# %%
+for i in range(merged_dataframe.shape[0]):
+    element = merged_dataframe.iloc[i]
+    if (type(element["class"]) == bool):
+        #the begin frame is the difference between the current time and the previous time (from vid change)
+        begin_frame = get_second_difference(element["time"], merged_dataframe.iloc[i-1]["time"]) * 24
+        #the end frame is the difference between the current time and the next time (from vid change)
+        end_frame = (get_second_difference(merged_dataframe.iloc[i+1]["time"] , element["time"]) * 24 + begin_frame) if i <= merged_dataframe.shape[0]-2 else 20*60*24
+        filename = merged_dataframe.iloc[i-1]["class"]
+        class_type = "logNo" if element["class"] else "logNo"
+        row = np.array([filename, class_type, begin_frame, end_frame])
+        final = pd.concat([final, pd.DataFrame(row.reshape(1,-1), columns=list(final))], ignore_index=True)
+    else:
+        filename = element["class"]
+        begin_frame = 0
+        end_frame = get_second_difference(merged_dataframe.iloc[i+1]["time"], element["time"]) * 24  if i <= merged_dataframe.shape[0]-2 else 20*60*24
+        class_type = "logNo" if get_last_class(merged_dataframe, i) else "logPos"
+        row = np.array([filename, class_type, begin_frame, end_frame])
+        final = pd.concat([final, pd.DataFrame(row.reshape(1,-1), columns=list(final))], ignore_index=True)
 
-
-
-
-
-
-
+print(final[0:20])
 # %%
