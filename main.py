@@ -59,5 +59,9 @@ merge_df2['Frame count'] = merge_df2['Frame count'].astype(int)
 merge_df2['start_frame'] = merge_df2['start_frame'].astype(int)
 merge_df2['end_frame'] = merge_df2['end_frame'].astype(int)
 
+# remove rows where end_frame is the same as start_frame
+
+merge_df2 = merge_df2[merge_df2['end_frame'] != merge_df2['start_frame']]
+
 merge_df2
 # %%
