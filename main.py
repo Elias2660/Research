@@ -39,11 +39,12 @@ merge_df2
 # loop through merge_df row by row with row_number
 for row_number in range(merge_df2.shape[0]):
     # if the Filename is null
-    if pd.isnull(merge_df2.iloc[row_number]['Filename']):
-        current_row = merge_df2.iloc[row_number]
+    current_row = merge_df2.iloc[row_number]
+    if pd.isnull(current_row['Filename']): # if the row is merged from state changes
         previous_row = merge_df2.iloc[row_number-1]
         total_frame = previous_row['Frame count']
-        previous_row_frames = (current_row.time - previous_row.time).seconds * 24
+        # get the number of frames for the time for the previous row
+        previous_row_frames = (merge_df2.iloc[row_number].time - merge_df2.iloc[row_number-1].time).seconds * 24 
         merge_df2.at[row_number-1, 'Frame count'] = previous_row_frames
         previous_end_frame = merge_df2.at[row_number-1, 'start_frame'] + previous_row_frames
         merge_df2.at[row_number, 'end_frame'] = merge_df2.at[row_number-1, 'end_frame'] 
