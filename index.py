@@ -89,6 +89,8 @@ current_class =  False if log_no.iloc[0]["time"] < log_pos.iloc[0]["time"] else 
 
 if (min(log_no.iloc[0]["time"], log_pos.iloc[0]["time"]) != frame_count.iloc[0]["time"]):
     current_class = not current_class
+
+#%%
 """
 ALGORITHM
 
@@ -103,7 +105,7 @@ final = pd.DataFrame(columns = ["file", "class", "begin frame", "end_frame"])
 
 
 
-def find_last_frame(frame_count, event_number, fc_index, final):
+def find_begin_frame(frame_count, event_number, fc_index, final):
     """
     find the begin_frame
     """
@@ -113,7 +115,7 @@ def find_last_frame(frame_count, event_number, fc_index, final):
         return 0
     else:
         #else, start with the last frame
-        return final.iloc[event_number-1]["end_frame"] + 1
+        return float(final.iloc[event_number-1]["end_frame"]) + 1
 
 
 def find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index) :
@@ -123,10 +125,10 @@ def find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos
     """
     #if the next event is going to be change_video event, just return the frame count
     #else, make it the frame count of the next event minus one
-    if (frame_count.iloc[fc_index+1]["time"] < min(log_no.iloc[log_no_index+1]["time"], log_pos.iloc[log_pos_index+1]["time"])):
+    if (frame_count.iloc[fc_index]["time"] < min(log_no.iloc[log_no_index]["time"], log_pos.iloc[log_pos_index]["time"])):
         return frame_count.iloc[fc_index]["Frame count"]
     else:
-        return (min(log_no.iloc[log_no_index+1]["time"], log_pos.iloc[log_pos_index+1]["time"]) - frame_count.iloc[fc_index]["time"])*24
+        return float((min(log_no.iloc[log_no_index]["time"], log_pos.iloc[log_pos_index]["time"]) - frame_count.iloc[fc_index]["time"])*24)
 
 
 def update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index):
@@ -141,10 +143,11 @@ def update_event(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_i
         #log_no event
         log_no_index+=1
         print("logNo")
-    if (log_no.iloc[log_no_index]["time"] < log_pos.iloc[log_pos_index]["time"]):
+    if (log_no.iloc[log_no_index]["time"] > log_pos.iloc[log_pos_index]["time"]):
         #log_pos event
         log_pos_index+=1
         print("logPos")
+    print(fc_index, log_no_index, log_pos_index)
     return fc_index, log_no_index, log_pos_index
          
 def return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index):
@@ -153,9 +156,9 @@ def return_state(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_i
     """
     current_file_state = frame_count.iloc[fc_index]["Filename"]
     class_state = "logPos" if current_class else "logNo"
-    begin_frame = find_last_frame(frame_count, event_number, fc_index, final)
+    begin_frame = find_begin_frame(frame_count, event_number, fc_index, final)
     end_frame = find_end_frame(frame_count, log_no, log_pos, fc_index, log_no_index, log_pos_index)
-    return np.array([current_file_state, class_state, begin_frame, end_frame])
+    return np.array([current_file_state, class_state, float(begin_frame), float(end_frame)])
 
 
 while (fc_index < frame_count.shape[0]):
