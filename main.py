@@ -6,11 +6,14 @@ frame_count, log_no, log_pos = get_data()
 
 # set Frame count column to be int
 frame_count['Frame count'] = frame_count['Frame count'].astype(int)
+# add a time column to frame_count by parsing the Filename column
 frame_count['time'] = frame_count['Filename'].str.split('/').str[1].str.replace('.h264\'', '')
 frame_count['time'] = pd.to_datetime(frame_count['time'], format='%Y-%m-%d %H:%M:%S.%f')
+# add start_frame and end_frame column
 frame_count['start_frame'] = 0
 frame_count['end_frame'] = frame_count['Frame count']
 
+# create a 
 log_no['state'] = False
 log_pos['state'] = True
 state_changes_df = pd.concat([log_no, log_pos], axis=0)
@@ -23,8 +26,8 @@ state_changes_df = state_changes_df.sort_values(by='time')
 
 # %%
 # set the state of the frame_count
-merge_df = pd.merge_asof(frame_count, state_changes_df, on='time', direction='backward')
-merge_df = merge_df.sort_values(by='time')
+merge_df = pd.merge_asof(frame_count, state_changes_df, on='time', direction='backward')  # mix in state changes
+merge_df = merge_df.sort_values(by='time') 
 # set merge_df index to time column
 merge_df = merge_df.set_index('time')
 # merge merge_df and state_changes_df horizontally 
@@ -37,6 +40,7 @@ merge_df2
 # %%
 
 # loop through merge_df row by row with row_number
+# and process each newly added state columns 
 for row_number in range(merge_df2.shape[0]):
     # if the Filename is null
     current_row = merge_df2.iloc[row_number]
