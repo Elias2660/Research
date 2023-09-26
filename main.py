@@ -33,9 +33,6 @@ merge_df2 = pd.concat([merge_df, state_changes_df.set_index('time')], axis=0)
 merge_df2 = merge_df2.sort_index().reset_index()
 
 merge_df2
-# %%
-
-# for each of the rows in merge_df2 that doesn't have Filename, fill in the Filename from the row above it
 
 # %%
 # loop through merge_df row by row with row_number
@@ -45,8 +42,6 @@ for row_number in range(merge_df2.shape[0]):
     if pd.isnull(merge_df2.iloc[row_number]['Filename']):
         current_row = merge_df2.iloc[row_number]
         previous_row = merge_df2.iloc[row_number-1]
-        current_row['Filename'] = previous_row['Filename']
-        current_row['FPS: 24'] = previous_row['FPS: 24']
         total_frame = previous_row['Frame count']
         previous_row_frames = (current_row.time - previous_row.time).seconds * 24
         merge_df2.at[row_number-1, 'Frame count'] = previous_row_frames
@@ -65,6 +60,5 @@ merge_df2['start_frame'] = merge_df2['start_frame'].astype(int)
 merge_df2['end_frame'] = merge_df2['end_frame'].astype(int)
         
 
-# %%
 merge_df2
 # %%
