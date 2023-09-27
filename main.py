@@ -18,10 +18,10 @@ def format_videos(vidoes_df: pd.DataFrame) -> pd.DataFrame:
 
 def format_state_changes(log_no: pd.DataFrame, log_pos: pd.DataFrame) -> pd.DataFrame:
     # create a 
-    log_no['state'] = False
-    log_pos['state'] = True
+    log_no['on'] = False
+    log_pos['on'] = True
     state_changes_df = pd.concat([log_no, log_pos], axis=0)
-    state_changes_df.columns=['time', 'state']
+    state_changes_df.columns=['time', 'on']
     # parse the time column into a datetime object
     state_changes_df['time'] = pd.to_datetime(state_changes_df['time'], format='%Y%m%d_%H%M%S')
     # sort the dataframe by time
