@@ -33,11 +33,11 @@ def merge_events(frame_count: pd.DataFrame, state_changes: pd.DataFrame) -> pd.D
     merge_df = pd.merge_asof(
         frame_count, 
         state_changes, 
-        on='time', direction='backward')  # mix in state column vertically
+        on='time', direction='backward')  # mix in state column horizontally
     merge_df = merge_df.sort_values(by='time') 
     # set merge_df index to time column
     merge_df = merge_df.set_index('time')
-    # merge merge_df and state_changes_df horizontally 
+    # merge merge_df and state_changes_df vertically 
     merge_df2 = pd.concat([merge_df, state_changes.set_index('time')], axis=0)
     # resort the merge_df2 by its index
     merge_df2 = merge_df2.sort_index().reset_index()
