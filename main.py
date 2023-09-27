@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 import os
 import pandas as pd
-from utils import getData
+from utils import get_data
 import numpy as np
 
 
@@ -14,7 +14,11 @@ API_KEY = os.getenv("API_KEY")
 SHEET_ID = os.getenv("SHEET_ID")
 
 # %%
-frame_count, log_no, log_pos = getData()
+frame_count = get_data("frame count")
+log_no = get_data("logNo")
+log_pos = get_data("logPos")
+
+
 print(f""" Frame Count Dataframe Shape: {frame_count.shape}""")
 print(frame_count.head())
 print(f"""\n Log No Dataframe Shape: {log_no.shape}""")
@@ -30,30 +34,31 @@ We have different timestamps and have to combine them to a single timeline, with
 If that's so I guess I'm going to have to add everything together and the sort by timestamp
 
 The standardized timestamp would be by second...
-
-NOTICE: this only works as long as the day doesen't change
 """
 
 #first, I'm probably going to have to create a new dataframe with standardized timestamps
 #by second
 
 #let's start with the frame count dataframe
-def get_necessary_time(row):
+def add_time_to_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
     """
-    Returns the time in seconds from the frame count dataframe, as long as it's all on the same month
+    DESCRIPTION
+    ----------
+    Given the frame count dataframe, add a column called "time" which has timestamps 
+    taken from the Filename column
+
+    Format of the frame count filename: "2023-08-09_2023-08-12/2023-08-09 07:42:21.978565.h264'"
+    2023-08-09 07:42:21.978565 -> YYYY-MM-DD HH:MM:SS.SSSSSS
+
+    CONTRACT
+    --------
+    pd.Dataframe -> pd.Dataframe
     """
-    matters = row.split("/")[1][:-6]
-    date, time = matters.split(" ")
-    years, months, days = date.split("-")
-    hours, minutes, seconds = time.split(":")
-    return round(float(str(years) + str(months) + str(days) + str(hours) + str(minutes) + str(seconds)),1)
-frame_count_times = frame_count.Filename
 
-
-frame_count_time_processed = frame_count_times.apply(get_necessary_time)
-
-print(frame_count_time_processed.head())
-
+    frame_count["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
+                                          format="%Y-%m-%d %H:%M:%S.%f")
+    
+    return frame_count
 
 
 # %%
@@ -61,27 +66,47 @@ print(frame_count_time_processed.head())
 now, let's do the same for the log_no and the lot_pos dataframes
 
 since they're the same structure-wise, I'm going to do it in a single function
-"""
-def process_log(row):
-    date, time = row.split("_")
-    return round(float(date + time),1)
 
+Time structure of logno/logpos dataframes: 20230809_083952
+20230809_083952 -> YYYYMMDD_HHMMSS
+"""
+
+def process_logs(log: pd.DataFrame) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    -----------
+    Given the log dataframe, return the same dataframe with a "time" column
+
+
+    CONTRACT
+    --------
+    process_logs(log) -> pd.Dataframe
+    log: log dataframe to be processed
+    """
+    log["time"] = pd.to_datetime(log["year/month/day_hour/min/sec"],
+                                 format="%Y%m%d_%H%M%S")
+    return log
+
+
+# %%
+def create_unified_dataframe(frame_count: pd.DataFrame, log_no: pd.DataFrame, log_pos: pd.DataFrame) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    -----------
+    Given a dataframe, create unified dataframe
+    Columns of unified dataframe is:
+    filename, class, begin frame, end frame
+
+    CONTACT
+    create_unified_dataframe(frame_count, log_no, log_pos) -> pd.DataFrame
+    frame_count: frame count dataframe
+    log_no: log no dataframe
+    log_pos: log pos dataframe
+    """
+    final = pd.DataFrame(columns=["file", "class", "begin frame", "end_frame"])
     
-log_no_times = log_no["year/month/day_hour/min/sec"]
-log_pos_times = log_pos["year/month/day_hour/min/sec"]
 
 
-
-log_no_times_processed = log_no_times.apply(process_log)
-log_pos_times_processed = log_pos_times.apply(process_log)
-# %%
-"""
-now, let's add the computed dataframes to the originals
-"""
-frame_count["time"] = frame_count_time_processed
-log_no["time"] = log_no_times_processed
-log_pos["time"] = log_pos_times_processed
-# %%
 fc_index, log_no_index, log_pos_index, event_number = 0, 0, 0, 0 #current indicies
 
 current_class =  False if log_no.iloc[0]["time"] < log_pos.iloc[0]["time"] else True
