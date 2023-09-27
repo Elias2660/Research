@@ -77,10 +77,10 @@ if __name__ == "__main__":
     # read data from google sheet
     frame_count, log_no, log_pos = get_data()
 
-    # merge the videos with the state changes
+    # merge the video file creation events with the state changes events
     merged_df = merge_events(
-        format_videos(frame_count), 
-        format_state_changes(log_no, log_pos)
+        format_videos(frame_count), # files events 
+        format_state_changes(log_no, log_pos)  # state change events
     )
 
     clips_df = fill_state_change_rows(merged_df)
