@@ -2,7 +2,6 @@
 import requests 
 from dotenv import load_dotenv
 import os
-import re
 import pandas as pd
 from utils import getData
 import numpy as np
