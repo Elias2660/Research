@@ -35,7 +35,7 @@ def get_data(sheet_name:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
 
 if __name__ == "__main__":
     frame_count = get_data("frame count")
-    display(frame_count.head())
+    print(frame_count.head())
 
 
 
