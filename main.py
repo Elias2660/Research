@@ -33,7 +33,7 @@ def merge_asof(frame_count: pd.DataFrame, state_changes: pd.DataFrame) -> pd.Dat
     merge_df = pd.merge_asof(
         frame_count, 
         state_changes, 
-        on='time', direction='backward')  # mix in state changes
+        on='time', direction='backward')  # mix in state column vertically
     merge_df = merge_df.sort_values(by='time') 
     # set merge_df index to time column
     merge_df = merge_df.set_index('time')
@@ -78,13 +78,14 @@ if __name__ == "__main__":
     frame_count, log_no, log_pos = get_data()
 
     # merge the videos with the state changes
-    merge_df2 = merge_asof(
+    merged_df = merge_asof(
         format_videos(frame_count), 
-        format_state_changes(log_no, log_pos))
+        format_state_changes(log_no, log_pos)
+    )
 
-    all_videos_w_state = fill_state_change_rows(merge_df2)
+    clips_df = fill_state_change_rows(merged_df)
 
     # remove rows where end_frame is the same as start_frame
-    all_videos_w_state = all_videos_w_state[all_videos_w_state['end_frame'] != all_videos_w_state['start_frame']]
+    clips_df = clips_df[clips_df['end_frame'] != clips_df['start_frame']]
 
-    all_videos_w_state.to_csv('all_videos_w_state.csv')
+    clips_df.to_csv('clips_df.csv')
