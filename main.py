@@ -29,7 +29,7 @@ def format_state_changes(log_no: pd.DataFrame, log_pos: pd.DataFrame) -> pd.Data
     return state_changes_df
 
 
-def merge_asof(frame_count: pd.DataFrame, state_changes: pd.DataFrame) -> pd.DataFrame:
+def merge_events(frame_count: pd.DataFrame, state_changes: pd.DataFrame) -> pd.DataFrame:
     merge_df = pd.merge_asof(
         frame_count, 
         state_changes, 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     frame_count, log_no, log_pos = get_data()
 
     # merge the videos with the state changes
-    merged_df = merge_asof(
+    merged_df = merge_events(
         format_videos(frame_count), 
         format_state_changes(log_no, log_pos)
     )
