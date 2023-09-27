@@ -2,18 +2,18 @@
 # %%
 import pandas as pd
 from utils import get_data
-frame_count, log_no, log_pos = get_data()
+
 
 def format_videos(vidoes_df: pd.DataFrame) -> pd.DataFrame: 
     # set Frame count column to be int
-    frame_count['Frame count'] = frame_count['Frame count'].astype(int)
-    # add a time column to frame_count by parsing the Filename column
-    frame_count['time'] = frame_count['Filename'].str.split('/').str[1].str.replace('.h264\'', '')
-    frame_count['time'] = pd.to_datetime(frame_count['time'], format='%Y-%m-%d %H:%M:%S.%f')
+    vidoes_df['Frame count'] = vidoes_df['Frame count'].astype(int)
+    # add a time column to vidoes_df by parsing the Filename column
+    vidoes_df['time'] = vidoes_df['Filename'].str.split('/').str[1].str.replace('.h264\'', '')
+    vidoes_df['time'] = pd.to_datetime(vidoes_df['time'], format='%Y-%m-%d %H:%M:%S.%f')
     # add start_frame and end_frame column
-    frame_count['start_frame'] = 0
-    frame_count['end_frame'] = frame_count['Frame count']
-    return frame_count
+    vidoes_df['start_frame'] = 0
+    vidoes_df['end_frame'] = vidoes_df['Frame count']
+    return vidoes_df
 
 
 def format_state_changes(log_no: pd.DataFrame, log_pos: pd.DataFrame) -> pd.DataFrame:
@@ -71,15 +71,20 @@ def fill_state_change_rows(merge_df2: pd.DataFrame) -> pd.DataFrame:
 
     return merge_df2
 
-# merge the videos with the state changes
-merge_df2 = merge_asof(
-    format_videos(frame_count), 
-    format_state_changes(log_no, log_pos))
 
-all_videos_w_state = fill_state_change_rows(merge_df2)
+if __name__ == "__main__":
 
-# remove rows where end_frame is the same as start_frame
-all_videos_w_state = all_videos_w_state[all_videos_w_state['end_frame'] != all_videos_w_state['start_frame']]
+    # read data from google sheet
+    frame_count, log_no, log_pos = get_data()
 
-all_videos_w_state.to_csv('all_videos_w_state.csv')
-# %%
+    # merge the videos with the state changes
+    merge_df2 = merge_asof(
+        format_videos(frame_count), 
+        format_state_changes(log_no, log_pos))
+
+    all_videos_w_state = fill_state_change_rows(merge_df2)
+
+    # remove rows where end_frame is the same as start_frame
+    all_videos_w_state = all_videos_w_state[all_videos_w_state['end_frame'] != all_videos_w_state['start_frame']]
+
+    all_videos_w_state.to_csv('all_videos_w_state.csv')
