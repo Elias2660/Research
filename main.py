@@ -71,12 +71,12 @@ Time structure of logno/logpos dataframes: 20230809_083952
 20230809_083952 -> YYYYMMDD_HHMMSS
 """
 
-def process_logs(log: pd.DataFrame) -> pd.DataFrame:
+def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     """
     DESCRIPTION
     -----------
     Given the log dataframe, return the same dataframe with a "time" column
-
+    and class column
 
     CONTRACT
     --------
@@ -85,11 +85,21 @@ def process_logs(log: pd.DataFrame) -> pd.DataFrame:
     """
     log["time"] = pd.to_datetime(log["year/month/day_hour/min/sec"],
                                  format="%Y%m%d_%H%M%S")
-    return log
+    log["class"] = event_change_type
+    return  log[["time", "class"]]
+
+
+def concat_logs(*args: pd.DataFrame) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    Given the log dataframes, return a single dataframe with all the logs
+    """
+    unpacked_logs = list(args)
+    return pd.concat(unpacked_logs, ignore_index=True)
 
 
 # %%
-def create_unified_dataframe(frame_count: pd.DataFrame, log_no: pd.DataFrame, log_pos: pd.DataFrame) -> pd.DataFrame:
+def create_unified_dataframe(frame_count: pd.DataFrame, logs: pd.DataFrame) -> pd.DataFrame:
     """
     DESCRIPTION
     -----------
@@ -98,13 +108,14 @@ def create_unified_dataframe(frame_count: pd.DataFrame, log_no: pd.DataFrame, lo
     filename, class, begin frame, end frame
 
     CONTACT
-    create_unified_dataframe(frame_count, log_no, log_pos) -> pd.DataFrame
+    create_unified_dataframe(frame_count, logs, log_pos) -> pd.DataFrame
     frame_count: frame count dataframe
-    log_no: log no dataframe
-    log_pos: log pos dataframe
+    logs: combined data types
     """
-    final = pd.DataFrame(columns=["file", "class", "begin frame", "end_frame"])
+
+    merged_dataframe = pd.merge_asof(frame_count, logs,on="time", direction="backward")
     
+#------------------------------------------------------------------------------------------------------------------------
 
 
 fc_index, log_no_index, log_pos_index, event_number = 0, 0, 0, 0 #current indicies
@@ -145,21 +156,6 @@ merged_dataframe = merge_dataframes(frame_count, log_no, log_pos)
 
 # %%
 merged_dataframe
-
-
-#%%
-def get_second_difference(time1, time2):
-    """
-    Given time, which is given as a float with the values 
-    of YYYYMMDDHHMMSS.S, returns the difference in seconds
-    """
-    year_diff = int(time1 // 10000000000) - int(time2 // 10000000000)
-    month_diff = int(time1 // 100000000)%100 - int(time2 // 100000000)%100
-    day_diff = int(time1 // 1000000)%100 - int(time2 // 1000000)%100
-    hour_diff = int(time1 // 10000)%100 - int(time2 // 10000)%100
-    minute_diff = int(time1 // 100)%100 - int(time2 // 100)%100
-    second_diff = int(time1 )% 100 - int(time2 ) %100
-    return abs(year_diff * 31536000 + month_diff * 2592000 + day_diff * 86400 + hour_diff * 3600 + minute_diff * 60 + second_diff)
 
 
 #%%
