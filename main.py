@@ -6,6 +6,7 @@ import pandas as pd
 from utils import get_data
 import numpy as np
 
+#TODO Work on processing on the log dataframes
 
 # %%
 
@@ -40,7 +41,7 @@ The standardized timestamp would be by second...
 #by second
 
 #let's start with the frame count dataframe
-def add_time_to_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
+def process_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
     """
     DESCRIPTION
     ----------
@@ -57,11 +58,13 @@ def add_time_to_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
 
     frame_count["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
                                           format="%Y-%m-%d %H:%M:%S.%f")
-    
-    return frame_count
-
-
-# %%
+    processed= pd.DataFrame()
+    processed[["Filename", "time"]] = frame_count[["Filename", "time"]]
+    processed["begin frame"], processed[["end frame", "class"]] = 0, np.nan
+    processed.set_index("time", inplace=True, drop = True)
+    processed = processed[["Filename", "class", "begin frame", "end frame"]]
+    return processed
+#%%
 """
 now, let's do the same for the log_no and the lot_pos dataframes
 
@@ -75,7 +78,7 @@ def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     """
     DESCRIPTION
     -----------
-    Given the log dataframe, return the same dataframe with a "time" column
+    Given a log dataframe, return the same dataframe with a "time" column
     and class column
 
     CONTRACT
@@ -89,17 +92,9 @@ def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     return  log[["time", "class"]]
 
 
-def concat_logs(*args: pd.DataFrame) -> pd.DataFrame:
-    """
-    DESCRIPTION
-    Given the log dataframes, return a single dataframe with all the logs
-    """
-    unpacked_logs = list(args)
-    return pd.concat(unpacked_logs, ignore_index=True)
-
 
 # %%
-def create_unified_dataframe(frame_count: pd.DataFrame, logs: pd.DataFrame) -> pd.DataFrame:
+def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> pd.DataFrame:
     """
     DESCRIPTION
     -----------
@@ -112,8 +107,10 @@ def create_unified_dataframe(frame_count: pd.DataFrame, logs: pd.DataFrame) -> p
     frame_count: frame count dataframe
     logs: combined data types
     """
-
+    unpacked_logs = list(args)
+    logs =  pd.concat(unpacked_logs, ignore_index=True)
     merged_dataframe = pd.merge_asof(frame_count, logs,on="time", direction="backward")
+    return merged_dataframe
     
 #------------------------------------------------------------------------------------------------------------------------
 
@@ -126,73 +123,26 @@ if (min(log_no.iloc[0]["time"], log_pos.iloc[0]["time"]) != frame_count.iloc[0][
     current_class = not current_class
 
 #%%
+if __name__ == "__main__":
+    processed_frame_count = process_frame_count(frame_count)
+    processed_log_no = process_log(log_no, "no")
+
+
+#%%
 """
 ALGORITHM
 
 """ 
 
-#%%
-final = pd.DataFrame(columns = ["file", "class", "begin frame", "end_frame"])
-
-
-def merge_dataframes(frame_count, log_no, log_pos):
-    """
-    merge the dataframes into one and sort
-    """
-    frame_count["class"] = frame_count["Filename"]
-    log_no["class"] = False;
-    log_pos["class"] = True;
-    merged = pd.DataFrame(columns = ["time", "class"])
-    merged = pd.concat([merged, frame_count[["time", "class"]]], ignore_index = True)
-    merged = pd.concat([merged, log_no[["time", "class"]]], ignore_index = True)
-    merged = pd.concat([merged, log_pos[["time", "class"]]], ignore_index = True)
-
-    merged = merged.sort_values(by=["time"]).reset_index(drop=True)
-
-    return merged
-
-merged_dataframe = merge_dataframes(frame_count, log_no, log_pos)
-    
-
-# %%
-merged_dataframe
-
+final = pd.DataFrame(columns=["filename", "class", "begin frame", "end frame"])
 
 #%%
 
-def get_last_class(merged_dataframe, index):
-    """
-    Given the merged dataframe and the current index, returns the last class with a true or false value
-    """
-    if (type(merged_dataframe.iloc[index]["class"])  == bool):
-        return merged_dataframe.iloc[index]["class"]
-    if index==0:
-        return False if log_no["time"][0] < log_pos["time"][0] else True
-    return get_last_class(merged_dataframe, index - 1)
         
         
 
 # %%
-for i in range(merged_dataframe.shape[0]):
-    element = merged_dataframe.iloc[i]
-    if (type(element["class"]) == bool):
-        #the begin frame is the difference between the current time and the previous time (from vid change)
-        begin_frame = get_second_difference(element["time"], merged_dataframe.iloc[i-1]["time"]) * 24
-        #the end frame is the difference between the current time and the next time (from vid change)
-        end_frame = (get_second_difference(merged_dataframe.iloc[i+1]["time"] , element["time"]) * 24 + begin_frame) if i <= merged_dataframe.shape[0]-2 else 20*60*24
-        filename = merged_dataframe.iloc[i-1]["class"]
-        class_type = "logPos" if element["class"] else "logNo"
-        row = np.array([filename, class_type, begin_frame, end_frame])
-        final = pd.concat([final, pd.DataFrame(row.reshape(1,-1), columns=list(final))], ignore_index=True)
-    else:  # if the class is a string file name, 
-        filename = element["class"]
-        begin_frame = 0
-        end_frame = get_second_difference(merged_dataframe.iloc[i+1]["time"], element["time"]) * 24  if i <= merged_dataframe.shape[0]-2 else 20*60*24
-        class_type = "logPos" if get_last_class(merged_dataframe, i) else "logNo"
-        row = np.array([filename, class_type, begin_frame, end_frame])
-        final = pd.concat([final, pd.DataFrame(row.reshape(1,-1), columns=list(final))], ignore_index=True)
 
-print(final[0:20])
 # %%
 final.to_csv("final.csv")
 # %%
