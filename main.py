@@ -89,7 +89,12 @@ def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     log["time"] = pd.to_datetime(log["year/month/day_hour/min/sec"],
                                  format="%Y%m%d_%H%M%S")
     log["class"] = event_change_type
-    return  log[["time", "class"]]
+    processed = pd.DataFrame()
+    processed[["time", "class"]] = log[["time", "class"]]
+    processed["begin frame"], processed[["end frame", "filename"]] = np.nan, np.nan
+    processed.set_index("time", inplace=True, drop = True)
+    processed  = processed[['filename', 'class', 'begin frame', 'end frame']]
+    return  processed
 
 
 
@@ -112,6 +117,7 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     merged_dataframe = pd.merge_asof(frame_count, logs,on="time", direction="backward")
     return merged_dataframe
     
+#%%
 #------------------------------------------------------------------------------------------------------------------------
 
 
