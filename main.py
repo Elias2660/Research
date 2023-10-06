@@ -6,26 +6,9 @@ import pandas as pd
 from utils import get_data
 import numpy as np
 
-#TODO Work on processing on the log dataframes
-
-# %%
-
-load_dotenv()
-API_KEY = os.getenv("API_KEY")
-SHEET_ID = os.getenv("SHEET_ID")
-
-# %%
-frame_count = get_data("frame count")
-log_no = get_data("logNo")
-log_pos = get_data("logPos")
+#todo: check about having the time row as the index, it could break downstream stuff :(
 
 
-print(f""" Frame Count Dataframe Shape: {frame_count.shape}""")
-print(frame_count.head())
-print(f"""\n Log No Dataframe Shape: {log_no.shape}""")
-print(log_no.head())
-print(f"""\n Log Pos Dataframe Shape: {log_pos.shape}""")
-print(log_pos.head())
 
 
 # %%
@@ -113,26 +96,57 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     logs: combined data types
     """
     unpacked_logs = list(args)
-    logs =  pd.concat(unpacked_logs, ignore_index=True)
-    merged_dataframe = pd.merge_asof(frame_count, logs,on="time", direction="backward")
-    return merged_dataframe
+    logs =  pd.concat(unpacked_logs)
+    merged_dataframe = pd.concat([frame_count, logs])
+    return merged_dataframe.sort_index()
+
+
+# %% 
+def run_algo(unified_dataframe:pd.DataFrame) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    1- Sort the values of the datafame by time
+    2- Fill in the values for the dataframe
+        For the log dataframe, you need the begin frame, filename, and end frame.
+
+        Begin frame = Time elapsd since last frame filechange, 
+
+        End frame =  Time of next - time of last, unless it changes as a frame change
+
+        Filename: filename of the last file change
+
+
+        For the frame count dataframes, you need the class name and the end frame
+
+        Classname = class of the last event change, or the opposite of the next event change
+    CONTRACT
+    run_algo(pd.Dataframe) -> pd.DataFrame
+    unified_dataframe: the (sorted) unified dataframe containing all the classes and such
+
+    REMINDERs
+    Remember to fix the edge cases
+    """
+
+    for (index, row) in unified_dataframe.iterrows():
     
 #%%
-#------------------------------------------------------------------------------------------------------------------------
-
-
-fc_index, log_no_index, log_pos_index, event_number = 0, 0, 0, 0 #current indicies
-
-current_class =  False if log_no.iloc[0]["time"] < log_pos.iloc[0]["time"] else True
-
-if (min(log_no.iloc[0]["time"], log_pos.iloc[0]["time"]) != frame_count.iloc[0]["time"]):
-    current_class = not current_class
-
-#%%
 if __name__ == "__main__":
-    processed_frame_count = process_frame_count(frame_count)
-    processed_log_no = process_log(log_no, "no")
+    load_dotenv()
+    API_KEY = os.getenv("API_KEY")
+    SHEET_ID = os.getenv("SHEET_ID")
 
+
+    frame_count = get_data("frame count")
+    log_no = get_data("logNo")
+    log_pos = get_data("logPos")
+    processed_frame_count = process_frame_count(frame_count)
+    processed_log_no = process_log(log_no, "logNo")
+    print(f""" Frame Count Dataframe Shape: {frame_count.shape}""")
+    print(frame_count.head())
+    print(f"""\n Log No Dataframe Shape: {log_no.shape}""")
+    print(log_no.head())
+    print(f"""\n Log Pos Dataframe Shape: {log_pos.shape}""")
+    print(log_pos.head())
 
 #%%
 """
