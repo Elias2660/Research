@@ -38,14 +38,11 @@ def process_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
     --------
     pd.Dataframe -> pd.Dataframe
     """
-
-    frame_count["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
-                                          format="%Y-%m-%d %H:%M:%S.%f")
     processed= pd.DataFrame()
-    processed[["Filename", "time"]] = frame_count[["Filename", "time"]]
-    processed["begin frame"], processed[["end frame", "class"]] = 0, np.nan
-    processed.set_index("time", inplace=True, drop = True)
-    processed = processed[["Filename", "class", "begin frame", "end frame"]]
+    processed["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
+                                          format="%Y-%m-%d %H:%M:%S.%f")
+    processed["Filename"], processed["begin frame"], processed[["end frame", "class"]] = frame_count["Filename"], 0, np.nan
+    processed = processed[["Filename", "class", "begin frame", "end frame", "time"]]
     return processed
 #%%
 """
@@ -75,8 +72,7 @@ def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     processed = pd.DataFrame()
     processed[["time", "class"]] = log[["time", "class"]]
     processed["begin frame"], processed[["end frame", "filename"]] = np.nan, np.nan
-    processed.set_index("time", inplace=True, drop = True)
-    processed  = processed[['filename', 'class', 'begin frame', 'end frame']]
+    processed  = processed[['filename', 'class', 'begin frame', 'end frame', "time"]]
     return  processed
 
 
@@ -98,11 +94,12 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     unpacked_logs = list(args)
     logs =  pd.concat(unpacked_logs)
     merged_dataframe = pd.concat([frame_count, logs])
+    merged_dataframe.sort_values(by="time", inplace=True).reset_index(drop=True)
     return merged_dataframe.sort_index()
 
 
 # %% 
-def run_algo(unified_dataframe:pd.DataFrame) -> pd.DataFrame:
+def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.DataFrame:
     """
     DESCRIPTION
     1- Sort the values of the datafame by time
@@ -128,6 +125,34 @@ def run_algo(unified_dataframe:pd.DataFrame) -> pd.DataFrame:
     """
 
     for (index, row) in unified_dataframe.iterrows():
+        #Filename: filename of the last file change if index is !0, filename is NAN
+        if (row["Filename"] == np.nan and index != 0):
+            row["Filename"] = unified_dataframe.iloc[index - 1]["Filename"] 
+
+        #class of the last event change, or the opposite of the next event change
+        if (row["class"] == np.nan):
+             #assumes the if the first row is nan, the second row is an class change
+             #TODO: fix assumption and find out how to fix the class change problems
+            row["class"] = unified_dataframe.iloc[index - 1]["class"] if index != 0 else unified_dataframe.iloc[index + 1]["class"]
+        
+        #begin frame,
+        if (row["begin frame"] == np.nan):
+            #if this is the first frame, just assume np.nan (because if it's not zero, you don't know when the begin frame is)
+            row["begin frame"] = unified_dataframe.iloc[index - 1]["end frame"] if index != 0 else np.nan
+        
+        #end frame
+        if (row["end frame"] == np.nan):
+            """
+            by default, we're going to assume the end frame is time difference is 
+            the time difference between the time of the next event and the current time times 24
+            however if the next event is a frame change we're just going to assume the end frame is the last frame filename
+            """
+            if (unified_dataframe.iloc[index + 1]["Filename"] != row["Filename"] and unified_dataframe.iloc[index + 1]["Filename"] != np.nan):
+                row["end frame"] = frame_count[frame_count["Filename"] == unified_dataframe.iloc[index+1]["Filename"]]["frame_count"]
+            elif(index != unified_dataframe.shape[1] - 1):
+                ...
+
+
     
 #%%
 if __name__ == "__main__":
