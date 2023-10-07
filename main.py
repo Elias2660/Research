@@ -6,20 +6,7 @@ import pandas as pd
 from utils import get_data
 import numpy as np
 
-#todo: check about having the time row as the index, it could break downstream stuff :(
-
-
-
-
-# %%
-"""
-We have different timestamps and have to combine them to a single timeline, with the correct frame counts
-
-If that's so I guess I'm going to have to add everything together and the sort by timestamp
-
-The standardized timestamp would be by second...
-"""
-
+#%%
 #first, I'm probably going to have to create a new dataframe with standardized timestamps
 #by second
 
