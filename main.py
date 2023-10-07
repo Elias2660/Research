@@ -94,7 +94,8 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     unpacked_logs = list(args)
     logs =  pd.concat(unpacked_logs)
     merged_dataframe = pd.concat([frame_count, logs])
-    merged_dataframe.sort_values(by="time", inplace=True).reset_index(drop=True)
+    merged_dataframe.sort_values(by="time", inplace=True)
+    merged_dataframe.reset_index(inplace=True)
     return merged_dataframe.sort_index()
 
 
@@ -123,34 +124,42 @@ def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.Da
     REMINDERs
     Remember to fix the edge cases
     """
-
-    for (index, row) in unified_dataframe.iterrows():
+    final = unified_dataframe.copy(deep=True)
+    for (index, row) in final.iterrows():
         #Filename: filename of the last file change if index is !0, filename is NAN
-        if (row["Filename"] == np.nan and index != 0):
-            row["Filename"] = unified_dataframe.iloc[index - 1]["Filename"] 
+        if (pd.isnull(row["Filename"]) and index != 0):
+            final.loc[index,"Filename"] = final.loc[index - 1,"Filename"] 
 
         #class of the last event change, or the opposite of the next event change
-        if (row["class"] == np.nan):
+        if (pd.isnull(row["class"])):
              #assumes the if the first row is nan, the second row is an class change
              #TODO: fix assumption and find out how to fix the class change problems
-            row["class"] = unified_dataframe.iloc[index - 1]["class"] if index != 0 else unified_dataframe.iloc[index + 1]["class"]
+            final.loc[index,"class"] = final.loc[index - 1,"class"] if index != 0 else final.loc[index + 1,"class"]
         
         #begin frame,
-        if (row["begin frame"] == np.nan):
+        if (pd.isnull(row["begin frame"])):
             #if this is the first frame, just assume np.nan (because if it's not zero, you don't know when the begin frame is)
-            row["begin frame"] = unified_dataframe.iloc[index - 1]["end frame"] if index != 0 else np.nan
+            final.loc[index,"begin frame"] = final.loc[index - 1,"end frame"] if index != 0 else np.nan
         
         #end frame
-        if (row["end frame"] == np.nan):
+        if (pd.isnull(row["end frame"])):
             """
             by default, we're going to assume the end frame is time difference is 
             the time difference between the time of the next event and the current time times 24
             however if the next event is a frame change we're just going to assume the end frame is the last frame filename
             """
-            if (unified_dataframe.iloc[index + 1]["Filename"] != row["Filename"] and unified_dataframe.iloc[index + 1]["Filename"] != np.nan):
-                row["end frame"] = frame_count[frame_count["Filename"] == unified_dataframe.iloc[index+1]["Filename"]]["frame_count"]
-            elif(index != unified_dataframe.shape[1] - 1):
-                ...
+            if(index == final.shape[0] - 1):
+                #if this is the last event
+                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index,"Filename"]].iloc[0]["Frame count"])
+            elif (final.loc[index + 1,"Filename"] != row["Filename"] and not pd.isnull(final.loc[index + 1,"Filename"]) ):
+                #if the next event is a frame change
+                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index+1,"Filename"]].iloc[0]["Frame count"])
+            elif (index != final.shape[0] - 1):
+                 # if the next event is not at the end
+                 final.loc[index,"end frame"] = (final.loc[index + 1,"time"] - row["time"]).seconds * 24
+        
+    return final[['Filename', 'class', 'begin frame', 'end frame', "time"]]
+                
 
 
     
@@ -165,7 +174,10 @@ if __name__ == "__main__":
     log_no = get_data("logNo")
     log_pos = get_data("logPos")
     processed_frame_count = process_frame_count(frame_count)
+    processed_log_pos = process_log(log_pos, "logPos")
     processed_log_no = process_log(log_no, "logNo")
+    unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
+    final = run_algo(unified_dataframe, frame_count)
     print(f""" Frame Count Dataframe Shape: {frame_count.shape}""")
     print(frame_count.head())
     print(f"""\n Log No Dataframe Shape: {log_no.shape}""")
@@ -173,20 +185,6 @@ if __name__ == "__main__":
     print(f"""\n Log Pos Dataframe Shape: {log_pos.shape}""")
     print(log_pos.head())
 
-#%%
-"""
-ALGORITHM
-
-""" 
-
-final = pd.DataFrame(columns=["filename", "class", "begin frame", "end frame"])
-
-#%%
-
-        
-        
-
-# %%
 
 # %%
 final.to_csv("final.csv")
