@@ -153,12 +153,11 @@ def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.Da
                 final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index,"Filename"]].iloc[0]["Frame count"])
             elif (final.loc[index + 1,"Filename"] != row["Filename"] and not pd.isnull(final.loc[index + 1,"Filename"]) ):
                 #if the next event is a frame change
-                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index+1,"Filename"]].iloc[0]["Frame count"])
-            elif (index != final.shape[0] - 1):
-                 # if the next event is not at the end
+                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index,"Filename"]].iloc[0]["Frame count"])
+            else:
                  final.loc[index,"end frame"] = (final.loc[index + 1,"time"] - row["time"]).seconds * 24
         
-    return final[['Filename', 'class', 'begin frame', 'end frame', "time"]]
+    return final[['Filename', 'class', 'begin frame', 'end frame']]
                 
 
 
@@ -178,12 +177,6 @@ if __name__ == "__main__":
     processed_log_no = process_log(log_no, "logNo")
     unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
     final = run_algo(unified_dataframe, frame_count)
-    print(f""" Frame Count Dataframe Shape: {frame_count.shape}""")
-    print(frame_count.head())
-    print(f"""\n Log No Dataframe Shape: {log_no.shape}""")
-    print(log_no.head())
-    print(f"""\n Log Pos Dataframe Shape: {log_pos.shape}""")
-    print(log_pos.head())
 
 
 # %%
