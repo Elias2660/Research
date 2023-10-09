@@ -13,7 +13,7 @@ SHEET_ID = os.getenv("SHEET_ID")
 # import ipdb; ipdb.set_trace()
 
 
-def get_data(sheet_name:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
+def get_data_from_sheets(sheet_name:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
     """
     DESCRIPTION
     ----------
@@ -37,6 +37,24 @@ if __name__ == "__main__":
     frame_count = get_data("frame count")
     print(frame_count.head())
 
+#%%
 
+def get_data_from_csv_or_txt(data_name:str, filetype:str) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    ----------
+    Give data from a sheets file or csv file, return the data as a pandas dataframe
+
+    This is supposed to handle test cases and such
+
+    CONTRACT
+    --------
+    """
+    if (filetype == "csv") :
+        return pd.read_csv(f"{data_name}.csv")
+    else :
+        data =  pd.read_csv(f"{data_name}.txt", sep = " ", header= None)
+        data.columns = ["year/month/day_hour/min/sec"]
+        return data
 
 # %%

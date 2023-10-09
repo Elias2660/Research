@@ -2,3 +2,9 @@
 venv
 .DS_Store
 __pycache__
+counts.csv
+dataset.csv
+final.csv
+logNeg.txt
+logPos.txt
+logNo.txt

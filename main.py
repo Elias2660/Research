@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv
 import os
 import pandas as pd
-from utils import get_data
+from utils import get_data_from_sheets
 import numpy as np
 
 #%%
@@ -26,7 +26,7 @@ def process_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
     pd.Dataframe -> pd.Dataframe
     """
     processed= pd.DataFrame()
-    processed["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
+    processed["time"] = pd.to_datetime(frame_count.iloc[:, 0].apply(lambda x: x.split("/")[1][:-6]),
                                           format="%Y-%m-%d %H:%M:%S.%f")
     processed["Filename"], processed["begin frame"], processed[["end frame", "class"]] = frame_count["Filename"], 0, np.nan
     processed = processed[["Filename", "class", "begin frame", "end frame", "time"]]
@@ -156,13 +156,13 @@ if __name__ == "__main__":
     SHEET_ID = os.getenv("SHEET_ID")
 
 
-    frame_count = get_data("frame count")
-    log_no = get_data("logNo")
-    log_pos = get_data("logPos")
+    frame_count = get_data_from_sheets("frame count")
+    log_no = get_data_from_sheets("logNo")
+    log_pos = get_data_from_sheets("logPos")
     processed_frame_count = process_frame_count(frame_count)
-    processed_log_pos = process_log(log_pos, "logPos")
-    processed_log_no = process_log(log_no, "logNo")
-    unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
+
+
+    unified_dataframe = create_unified_dataframe(processed_frame_count, process_log(log_no, "logNo"), process_log(log_pos, "logPos"))
     final = run_algo(unified_dataframe, frame_count)
 
 
