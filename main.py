@@ -6,6 +6,13 @@ import pandas as pd
 from utils import get_data
 import numpy as np
 
+
+"""
+TODO: Finish implementation so that it can add headings and process
+the test cases
+
+"""
+
 #%%
 #first, I'm probably going to have to create a new dataframe with standardized timestamps
 #by second
@@ -84,6 +91,19 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     merged_dataframe.sort_values(by="time", inplace=True)
     merged_dataframe.reset_index(inplace=True)
     return merged_dataframe.sort_index()
+
+def get_classes_from_dataframe(dataframe: pd.DataFrame) -> list:
+    """
+    DESCRIPTION
+    -----------
+    Given a dataframe, return a list of all the classes
+
+    CONTRACT
+    --------
+    get_classes_from_dataframe(dataframe) -> list
+    dataframe: dataframe to be processed
+    """
+    return list(dataframe["class"].unique())
 
 
 # %% 
