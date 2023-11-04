@@ -185,9 +185,11 @@ if __name__ == "__main__":
     # unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
     # final = run_algo(unified_dataframe, frame_count)
 
+    # final.to_csv("final.csv")
+
+
+#%%
 """Testing Implementation (from csv)"""
 frame_count = get_file_data("frame_count.csv")
 
-# %%
-final.to_csv("final.csv")
-# %%
+
