@@ -175,16 +175,18 @@ if __name__ == "__main__":
     API_KEY = os.getenv("API_KEY")
     SHEET_ID = os.getenv("SHEET_ID")
 
+"""Normal Implementation (from google sheets)"""
+    # frame_count = get_data("frame count")
+    # log_no = get_data("logNo")
+    # log_pos = get_data("logPos")
+    # processed_frame_count = process_frame_count(frame_count)
+    # processed_log_pos = process_log(log_pos, "logPos")
+    # processed_log_no = process_log(log_no, "logNo")
+    # unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
+    # final = run_algo(unified_dataframe, frame_count)
 
-    frame_count = get_data("frame count")
-    log_no = get_data("logNo")
-    log_pos = get_data("logPos")
-    processed_frame_count = process_frame_count(frame_count)
-    processed_log_pos = process_log(log_pos, "logPos")
-    processed_log_no = process_log(log_no, "logNo")
-    unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no)
-    final = run_algo(unified_dataframe, frame_count)
-
+"""Testing Implementation (from csv)"""
+frame_count = get_file_data("frame_count.csv")
 
 # %%
 final.to_csv("final.csv")

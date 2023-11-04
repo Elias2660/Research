@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
 
 # %%
-def get_data_csv(filename:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
+def get_file_data(filename:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
     """Get the data from a txt or csv file"""
     df = pd.read_csv(f"{filename}")
     return df
@@ -50,6 +50,6 @@ if __name__ == "__main__":
     frame_count = get_data("frame count")
     print(frame_count.head())
     
-    logNeg = get_data_csv("logNeg.txt")
+    logNeg = get_file_data("logNeg.txt")
     print(logNeg.head())
 # %%
