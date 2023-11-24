@@ -6,13 +6,6 @@ import pandas as pd
 from utils import get_data_from_sheets
 import numpy as np
 
-
-"""
-TODO: Finish implementation so that it can add headings and process
-the test cases
-
-"""
-
 #%%
 #first, I'm probably going to have to create a new dataframe with standardized timestamps
 #by second
