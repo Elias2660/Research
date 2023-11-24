@@ -58,3 +58,24 @@ def get_data_from_csv_or_txt(data_name:str, filetype:str) -> pd.DataFrame:
         return data
 
 # %%
+def get_file_data(filename:str, has_header=True) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    Get the data from a txt or csv file
+
+    CONTRACT
+    get_file_data(filename, has_header) -> pd.DataFrame
+    filename: name of the file
+    has_header: whether or not the file has a header
+    """
+    df =  pd.read_csv(f"{filename}") if has_header else pd.read_csv(f"{filename}", header=None)
+    return df
+# %%
+
+if __name__ == "__main__":
+    frame_count = get_data("frame count")
+    print(frame_count.head())
+    
+    logNeg = get_file_data("logNeg.txt")
+    print(logNeg.head())
+# %%

@@ -5,6 +5,7 @@ __pycache__
 counts.csv
 dataset.csv
 final.csv
-logNeg.txt
-logPos.txt
 logNo.txt
+logPos.txt
+logNeg.txt
+final.csv
