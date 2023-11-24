@@ -40,9 +40,17 @@ if __name__ == "__main__":
 
 
 # %%
-def get_file_data(filename:str, api=API_KEY, sheet_id=SHEET_ID) -> pd.DataFrame:
-    """Get the data from a txt or csv file"""
-    df = pd.read_csv(f"{filename}")
+def get_file_data(filename:str, has_header=True) -> pd.DataFrame:
+    """
+    DESCRIPTION
+    Get the data from a txt or csv file
+
+    CONTRACT
+    get_file_data(filename, has_header) -> pd.DataFrame
+    filename: name of the file
+    has_header: whether or not the file has a header
+    """
+    df =  pd.read_csv(f"{filename}") if has_header else pd.read_csv(f"{filename}", header=None)
     return df
 # %%
 

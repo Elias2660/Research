@@ -33,9 +33,9 @@ def process_frame_count(frame_count: pd.DataFrame) -> pd.DataFrame:
     pd.Dataframe -> pd.Dataframe
     """
     processed= pd.DataFrame()
-    processed["time"] = pd.to_datetime(frame_count["Filename"].apply(lambda x: x.split("/")[1][:-6]),
+    processed["time"] = pd.to_datetime(frame_count.iloc[:,0].apply(lambda x: x.split("/")[1][:-6]),
                                           format="%Y-%m-%d %H:%M:%S.%f")
-    processed["Filename"], processed["begin frame"], processed[["end frame", "class"]] = frame_count["Filename"], 0, np.nan
+    processed["Filename"], processed["begin frame"], processed[["end frame", "class"]] = frame_count.iloc[:, 0], 0, np.nan
     processed = processed[["Filename", "class", "begin frame", "end frame", "time"]]
     return processed
 #%%
@@ -60,7 +60,7 @@ def process_log(log: pd.DataFrame, event_change_type:str) -> pd.DataFrame:
     process_logs(log) -> pd.Dataframe
     log: log dataframe to be processed
     """
-    log["time"] = pd.to_datetime(log["year/month/day_hour/min/sec"],
+    log["time"] = pd.to_datetime(log.iloc[:, 0],
                                  format="%Y%m%d_%H%M%S")
     log["class"] = event_change_type
     processed = pd.DataFrame()
@@ -81,7 +81,7 @@ def create_unified_dataframe(frame_count: pd.DataFrame, *args: pd.DataFrame) -> 
     filename, class, begin frame, end frame
 
     CONTACT
-    create_unified_dataframe(frame_count, logs, log_pos) -> pd.DataFrame
+    create_unified_dataframe(frame_count, logs) -> pd.DataFrame
     frame_count: frame count dataframe
     logs: combined data types
     """
@@ -107,7 +107,7 @@ def get_classes_from_dataframe(dataframe: pd.DataFrame) -> list:
 
 
 # %% 
-def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.DataFrame:
+def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame, FPS=24) -> pd.DataFrame:
     """
     DESCRIPTION
     1- Sort the values of the datafame by time
@@ -140,7 +140,6 @@ def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.Da
         #class of the last event change, or the opposite of the next event change
         if (pd.isnull(row["class"])):
              #assumes the if the first row is nan, the second row is an class change
-             #TODO: fix assumption and find out how to fix the class change problems
             final.loc[index,"class"] = final.loc[index - 1,"class"] if index != 0 else final.loc[index + 1,"class"]
         
         #begin frame,
@@ -154,17 +153,21 @@ def run_algo(unified_dataframe:pd.DataFrame, frame_count: pd.DataFrame) -> pd.Da
             by default, we're going to assume the end frame is time difference is 
             the time difference between the time of the next event and the current time times 24
             however if the next event is a frame change we're just going to assume the end frame is the last frame filename
+
+            IF THERE IS A CONFLICT (frame count time == log time), then we're going to assume the 
             """
             if(index == final.shape[0] - 1):
                 #if this is the last event
-                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index,"Filename"]].iloc[0]["Frame count"])
+                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count.iloc[:,0] == final.loc[index,"Filename"]].iloc[0,1])
             elif (final.loc[index + 1,"Filename"] != row["Filename"] and not pd.isnull(final.loc[index + 1,"Filename"]) ):
                 #if the next event is a frame change
-                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count["Filename"] == final.loc[index,"Filename"]].iloc[0]["Frame count"])
+                final.loc[index,"end frame"] = pd.to_numeric(frame_count.loc[frame_count.iloc[:,0] == final.loc[index,"Filename"]].iloc[0,1])
             else:
-                 final.loc[index,"end frame"] = (final.loc[index + 1,"time"] - row["time"]).seconds * 24
+                #probably because the next event is a log change
+                 final.loc[index,"end frame"] = (final.loc[index + 1,"time"] - row["time"]).seconds * FPS 
+                 final.loc[index,"end frame"] += final.loc[index - 1,"end frame"] if index != 0 and final.loc[index, "begin frame"] != 0 else 0
         
-    return final[['Filename', 'class', 'begin frame', 'end frame']]
+    return final[['Filename', 'class', 'begin frame', 'end frame']].astype({"begin frame": int, "end frame": int});
                 
 
 
@@ -175,7 +178,7 @@ if __name__ == "__main__":
     API_KEY = os.getenv("API_KEY")
     SHEET_ID = os.getenv("SHEET_ID")
 
-"""Normal Implementation (from google sheets)"""
+    # """Normal Implementation (from google sheets)"""
     # frame_count = get_data("frame count")
     # log_no = get_data("logNo")
     # log_pos = get_data("logPos")
@@ -188,8 +191,24 @@ if __name__ == "__main__":
     # final.to_csv("final.csv")
 
 
-#%%
-"""Testing Implementation (from csv)"""
-frame_count = get_file_data("frame_count.csv")
 
 
+    ##TESTING IMPLEMENTAIION
+    # problem is that the filename is different than the ones in the data, along with 
+    from utils import get_file_data
+    """Testing Implementation (from csv)"""
+    frame_count = get_file_data("counts.csv")
+    logNo = get_file_data("logNo.txt", has_header=False)
+    logPos = get_file_data("logPos.txt", has_header=False)
+    logNeg = get_file_data("logNeg.txt", has_header=False)
+    processed_frame_count = process_frame_count(frame_count)
+    processed_log_pos = process_log(logPos, "logPos",)
+    processed_log_no = process_log(logNo, "logNo")
+    processed_log_neg = process_log(logNeg, "logNeg")
+
+    unified_dataframe = create_unified_dataframe(processed_frame_count, processed_log_pos, processed_log_no, processed_log_neg)
+    final = run_algo(unified_dataframe, frame_count)
+
+    final.to_csv("final.csv")
+
+# %%
