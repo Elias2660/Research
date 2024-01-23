@@ -10,11 +10,9 @@ count = 0
 while cap.isOpened():
     ret, frame = cap.read()
     
-    if frame is None:
-        break;
-    if not ret:
+    if frame is None or not ret:
         break
-    if ret and frame is not None:
+    elif ret and frame is not None:
         count += 1
         cv2.imshow("frame", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
