@@ -44,11 +44,49 @@ process1 = (
 """
 
 
-def processVideo(IN_PATH, OUT_PATH):
+def runThroughVideo(IN_PATH, OUT_PATH):
     """
-    There are multiple steops this function
-    1. Read in the video file
-        - scaling to
-    2. Apply a scale effect
-    3. Crop the video file
+    This will be the simple function to make sure everything could work here
     """
+    cap = cv2.VideoCapture(IN_PATH)
+    count = 0
+    while True:
+        ret, frame = cap.read()
+        count += 1
+        print(f"Converting Frame {count}", end="\r")
+        if not ret:
+            break
+        ## This is where everything shoule happen
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+
+
+runThroughVideo("./output.mp4", "./output.mp4")
+
+
+def turn_to_raw_grayscale(file_in, out_file, width, height, fps, codec="XVID"):
+    """
+    to replace
+            process1 = (
+            ffmpeg
+            .input(video_path)
+            .output('pipe:', format='rawvideo', pix_fmt='gray')
+            #.output('pipe:', format='rawvideo', pix_fmt='yuv420p')
+            .run_async(pipe_stdout=True, quiet=True)
+        )
+    """
+    cap = cv2.VideoCapture(file_in)
+    out = cv2.videoWriter(
+        out_file, cv2.VideoWriter_fourcc(*codec), fps, (width, height)
+    )
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            cap.release()
+            break
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        out.write(gray)
+    out.release()
+    

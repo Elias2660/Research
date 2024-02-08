@@ -28,9 +28,6 @@ while cap.isOpened():
         video_writer.write(frame)
         count += 1
         
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break  
-        
     else:
         print("FINISHED CONVERTING", end= "\r")
         print()
