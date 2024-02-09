@@ -67,7 +67,7 @@ def runThroughVideo(IN_PATH, OUT_PATH):
 # runThroughVideo("./output.mp4", "./output.mp4")
 
 
-def turn_to_raw_grayscale(file_in, out_file, codec='avc1'):
+def turn_to_raw_grayscale(file_in, out_file, codec):
     """
     to replace
             process1 = (
@@ -82,7 +82,7 @@ def turn_to_raw_grayscale(file_in, out_file, codec='avc1'):
     cap = cv2.VideoCapture(file_in)
     height, width = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     fps = cap.get(cv2.CAP_PROP_FPS)
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    fourcc = cv2.VideoWriter_fourcc(*codec)
     video_writer = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
     while cap.isOpened():
         ret, frame = cap.read()
@@ -90,10 +90,11 @@ def turn_to_raw_grayscale(file_in, out_file, codec='avc1'):
             break
         print(f"Converting Frame {count}", end="\r")
         count += 1
-        video_writer.write(frame)
+        gray = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
+        video_writer.write(gray)
     print();
     cap.release()
     video_writer.release()
     cv2.destroyAllWindows()
 
-turn_to_raw_grayscale(os.path.join("converted.mp4"),os.path.join("troll.mp4"))
+turn_to_raw_grayscale(os.path.join("converted.mp4"),os.path.join("last_test.avi"), codec="yuv4")
