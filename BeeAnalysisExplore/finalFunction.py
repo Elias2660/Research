@@ -24,23 +24,6 @@ There are multiple instances where one will have to convert ther video
                 break
         total_frames = frame
     return width, height, total_frames
-
-? Second Instance
-process1 = (
-            ffmpeg
-            .input(self.path)
-            .trim(start_frame=1, end_frame=400)
-            .filter('scale', self.scale*self.width, -1)
-            .filter('crop', out_w=in_width, out_h=in_height, x=self.crop_x, y=self.crop_y)
-        )
-        if self.normalize:
-            process1 = process1.filter('normalize', independence=1.0)
-            process1 = (
-                process1
-                .output('pipe:', format='rawvideo', pix_fmt=pix_fmt)
-                .run_async(pipe_stdout=True, quiet=True)
-            )
-            in_bytes = process1.stdout.read(in_width * in_height * self.channels)
 """
 
 
@@ -76,11 +59,17 @@ def turn_to_raw_grayscale(file_in, out_file, codec):
             .output('pipe:', format='rawvideo', pix_fmt='gray')
             #.output('pipe:', format='rawvideo', pix_fmt='yuv420p')
             .run_async(pipe_stdout=True, quiet=True)
+            
+            
+            
         )
+        ! need to convert this shit so that it reads to the in_bytes
     """
     count = 0
     cap = cv2.VideoCapture(file_in)
-    height, width = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height, width = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)), int(
+        cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    )
     fps = cap.get(cv2.CAP_PROP_FPS)
     fourcc = cv2.VideoWriter_fourcc(*codec)
     video_writer = cv2.VideoWriter(out_file, fourcc, fps, (width, height))
@@ -92,9 +81,38 @@ def turn_to_raw_grayscale(file_in, out_file, codec):
         count += 1
         gray = cv2.cvtColor(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), cv2.COLOR_GRAY2BGR)
         video_writer.write(gray)
-    print();
+    print()
     cap.release()
     video_writer.release()
     cv2.destroyAllWindows()
 
-turn_to_raw_grayscale(os.path.join("converted.mp4"),os.path.join("last_test.avi"), codec="yuv4")
+
+turn_to_raw_grayscale(
+    os.path.join("converted.mp4"), os.path.join("last_test.avi"), codec="yuv4"
+)
+
+
+def filter_trip_scale(in_path, out_path):
+    """
+     Designed to replace the following:
+
+    process1 = (
+             ffmpeg
+             .input(self.path)
+             .trim(start_frame=1, end_frame=400)
+             .filter('scale', self.scale*self.width, -1)
+             .filter('crop', out_w=in_width, out_h=in_height, x=self.crop_x, y=self.crop_y)
+         )
+         if self.normalize:
+             process1 = process1.filter('normalize', independence=1.0)
+             process1 = (
+                 process1
+                 .output('pipe:', format='rawvideo', pix_fmt=pix_fmt)
+                 .run_async(pipe_stdout=True, quiet=True)
+             )
+             in_bytes = process1.stdout.read(in_width * in_height * self.channels)
+             
+             ! convert this shit so that it reads to in-bytes
+    """
+    
+    ...
