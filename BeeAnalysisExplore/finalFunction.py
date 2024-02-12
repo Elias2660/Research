@@ -39,6 +39,8 @@ def runThroughVideo(IN_PATH, OUT_PATH):
         print(f"Converting Frame {count}", end="\r")
         if not ret:
             break
+        
+        
         ## This is where everything shoule happen
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
