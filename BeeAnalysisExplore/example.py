@@ -213,7 +213,8 @@ class VideoSampler:
                 # Full independence between color channels. The bee videos are basically a single color.
                 # Otherwise normalizing the channels independently may not be a good choice.
                 process1 = process1.filter('normalize', independence=1.0)
-
+                
+            
             process1 = (
                 process1
                 # YUV444p is the alternative to rgb24, but the pretrained network expects rgb images.

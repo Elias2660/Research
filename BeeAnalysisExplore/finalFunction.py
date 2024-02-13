@@ -39,8 +39,7 @@ def runThroughVideo(IN_PATH, OUT_PATH):
         print(f"Converting Frame {count}", end="\r")
         if not ret:
             break
-        
-        
+
         ## This is where everything shoule happen
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
@@ -61,9 +60,9 @@ def turn_to_raw_grayscale(file_in, out_file, codec):
             .output('pipe:', format='rawvideo', pix_fmt='gray')
             #.output('pipe:', format='rawvideo', pix_fmt='yuv420p')
             .run_async(pipe_stdout=True, quiet=True)
-            
-            
-            
+
+
+
         )
         ! need to convert this shit so that it reads to the in_bytes
     """
@@ -94,7 +93,25 @@ turn_to_raw_grayscale(
 )
 
 
-def filter_trip_scale(in_path, out_path):
+def filter_trip_scale(
+    in_path,
+    out_path,
+    width,
+    height,
+    in_width,
+    in_height,
+    out_w,
+    out_h,
+    crop_x,
+    crop_y,
+    x,
+    y,
+    scale,
+    normalize,
+    start_frame=1,
+    end_frame=400,
+    codec="yuv4",
+):
     """
      Designed to replace the following:
 
@@ -113,8 +130,41 @@ def filter_trip_scale(in_path, out_path):
                  .run_async(pipe_stdout=True, quiet=True)
              )
              in_bytes = process1.stdout.read(in_width * in_height * self.channels)
-             
-             ! convert this shit so that it reads to in-bytes
     """
+    cap = cv2.videoCauture(in_path)
+    out = cv2.VideoWriter(
+        out_path,
+        cv2.VideoWriter_fourcc(*codec),
+        cap.get(cv2.CAP_PROP_FPS),
+        (out_w, out_h),
+    )
+    count = 0
+
+    while cap.isOpened():
+        frame, ret = cap.read()
+        if not ret:
+            break
+        if count < 400:
+            frame = cv2.resize(frame, (width * scale, height))
+            frame = frame[crop_y : crop_y + in_height, crop_x : crop_x + in_width]
+            count += 1
+
+            if normalize:
+                frame = cv2.normalize(
+                    frame,
+                    None,
+                    alpha=0,
+                    beta=1,
+                    norm_type=cv2.NORM_MINMAX,
+                    dtype=cv2.CV_32F,
+                )
+
+            out.write(frame)
+
+        else:
+            break
+    cap.release()
+    out.release()
     
-    ...
+    
+# given the fact that we're writing to a video file, we don't use 
