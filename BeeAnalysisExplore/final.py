@@ -79,8 +79,13 @@ def __iter__(self):
         
         ret, frame = cap.read()
         count += 1
+        
         if (self.bg_subtractor is not None):
-            ...
+            if count < 400:
+                frame = cv2.resize(frame, (self.width * self.scale, self.height))
+                frame = frame[self.crop_y : self.crop_y + in_height, self.crop_x : self.crop_x + in_width]
+                count += 1
+            
 
             
             
