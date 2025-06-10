@@ -40,11 +40,11 @@ Pygments==2.17.2
 python-dateutil==2.8.2
 pytz==2023.3.post1
 pyzmq==25.1.2
-requests==2.32.2
+requests==2.32.4
 six==1.16.0
 stack-data==0.6.3
 sympy==1.12
-torch==2.7.0
+torch==2.7.1
 torchvision==0.16.2
 tornado==6.5.1
 traitlets==5.14.0
