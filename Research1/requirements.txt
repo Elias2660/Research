@@ -40,6 +40,6 @@ tornado==6.5.1
 traitlets==5.10.1
 typing_extensions==4.8.0
 tzdata==2023.3
-urllib3==2.2.2
+urllib3==2.5.0
 wcwidth==0.2.6
 zipp==3.19.1
